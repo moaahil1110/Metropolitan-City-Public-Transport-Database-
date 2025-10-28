@@ -35,6 +35,7 @@ export const deleteBus = (id) => api.delete(`/buses/${id}`);
 // Bus Passes
 export const getBusPasses = () => api.get('/bus-passes');
 export const createBusPass = (data) => api.post('/bus-passes', data);
+export const deleteBusPass = (id) => api.delete(`/bus-passes/${id}`);
 
 // Bus Stops
 export const getBusStops = () => api.get('/bus-stops');

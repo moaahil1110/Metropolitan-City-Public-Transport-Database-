@@ -269,12 +269,36 @@ app.get('/api/bus-passes', async (req, res) => {
 
 app.post('/api/bus-passes', async (req, res) => {
   try {
-    const { user_id, pass_type, expiry_date, issue_date, status } = req.body;
+    const { user_id, pass_type, issue_date } = req.body;
+    console.log('Creating bus pass:', { user_id, pass_type, issue_date });
+    
+    // Use stored procedure to auto-calculate expiry date
     const result = await query(
-      'INSERT INTO BusPass (user_id, pass_type, expiry_date, issue_date, status) VALUES (?, ?, ?, ?, ?)',
-      [user_id, pass_type, expiry_date, issue_date, status || 'Active']
+      'CALL issue_bus_pass(?, ?, ?)',
+      [user_id, pass_type, issue_date]
     );
-    res.status(201).json({ id: result.insertId, message: 'Bus pass created successfully' });
+    
+    console.log('Stored procedure result:', JSON.stringify(result, null, 2));
+    
+    // MySQL stored procedure returns array of result sets
+    // First element [0] is the result set, second [1] is metadata
+    const passInfo = result[0][0];
+    
+    res.status(201).json({ 
+      id: passInfo.pass_id, 
+      message: passInfo.message 
+    });
+  } catch (err) {
+    console.error('Error creating bus pass:', err);
+    console.error('Stack:', err.stack);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/bus-passes/:id', async (req, res) => {
+  try {
+    await query('DELETE FROM BusPass WHERE pass_id = ?', [req.params.id]);
+    res.json({ message: 'Bus pass deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -34,13 +34,18 @@ const Buses = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createBus(formData);
+      console.log('Submitting bus data:', formData);
+      const response = await createBus(formData);
+      console.log('Bus created successfully:', response);
       setShowModal(false);
       setFormData({ route_id: '', registration_no: '', type: 'Non-AC', capacity: '', status: 'Active' });
       fetchData();
+      alert('Bus created successfully!');
     } catch (error) {
       console.error('Error creating bus:', error);
-      alert('Error creating bus');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      alert(`Error creating bus: ${error.response?.data?.error || error.message}`);
     }
   };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getBusPasses, getUsers, createBusPass } from '../services/api';
-import { Plus, CreditCard } from 'lucide-react';
+import { getBusPasses, getUsers, createBusPass, deleteBusPass } from '../services/api';
+import { Plus, CreditCard, Trash2 } from 'lucide-react';
 
 const BusPasses = () => {
   const [passes, setPasses] = useState([]);
@@ -10,10 +10,21 @@ const BusPasses = () => {
   const [formData, setFormData] = useState({
     user_id: '',
     pass_type: 'Monthly',
-    issue_date: new Date().toISOString().split('T')[0],
-    expiry_date: '',
-    status: 'Active'
+    issue_date: new Date().toISOString().split('T')[0]
   });
+
+  // Calculate expiry date for display
+  const calculateExpiryDate = (issueDate, passType) => {
+    const date = new Date(issueDate);
+    switch(passType) {
+      case 'Weekly': date.setDate(date.getDate() + 7); break;
+      case 'Monthly': date.setMonth(date.getMonth() + 1); break;
+      case 'Quarterly': date.setMonth(date.getMonth() + 3); break;
+      case 'Annual': date.setFullYear(date.getFullYear() + 1); break;
+      default: break;
+    }
+    return date.toLocaleDateString();
+  };
 
   useEffect(() => {
     fetchData();
@@ -34,13 +45,30 @@ const BusPasses = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createBusPass(formData);
+      console.log('Submitting form data:', formData);
+      const response = await createBusPass(formData);
+      console.log('Response:', response);
       setShowModal(false);
-      setFormData({ user_id: '', pass_type: 'Monthly', issue_date: new Date().toISOString().split('T')[0], expiry_date: '', status: 'Active' });
+      setFormData({ user_id: '', pass_type: 'Monthly', issue_date: new Date().toISOString().split('T')[0] });
       fetchData();
+      alert('Bus pass created successfully!');
     } catch (error) {
       console.error('Error creating pass:', error);
-      alert('Error creating bus pass');
+      console.error('Error details:', error.response?.data);
+      alert(`Error creating bus pass: ${error.response?.data?.error || error.message}`);
+    }
+  };
+
+  const handleDelete = async (passId) => {
+    if (window.confirm('Are you sure you want to delete this bus pass?')) {
+      try {
+        await deleteBusPass(passId);
+        fetchData();
+        alert('Bus pass deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting pass:', error);
+        alert(`Error deleting bus pass: ${error.response?.data?.error || error.message}`);
+      }
     }
   };
 
@@ -68,8 +96,15 @@ const BusPasses = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {passes.map((pass) => (
-          <div key={pass.pass_id} className="bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-            <div className="flex items-start justify-between mb-4">
+          <div key={pass.pass_id} className="bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl shadow-lg p-6 text-white relative">
+            <button
+              onClick={() => handleDelete(pass.pass_id)}
+              className="absolute top-4 right-4 p-2 bg-red-500 hover:bg-red-600 rounded-full transition-colors"
+              title="Delete pass"
+            >
+              <Trash2 size={16} />
+            </button>
+            <div className="flex items-start justify-between mb-4 pr-12">
               <CreditCard size={32} />
               <span className={`px-3 py-1 text-xs rounded-full ${
                 pass.status === 'Active' ? 'bg-white bg-opacity-30' : 'bg-black bg-opacity-30'
@@ -140,14 +175,11 @@ const BusPasses = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.expiry_date}
-                  onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date (Auto-calculated)</label>
+                <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
+                  {formData.issue_date ? calculateExpiryDate(formData.issue_date, formData.pass_type) : 'Select issue date'}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">✨ Automatically calculated by database stored procedure</p>
               </div>
               <div className="flex space-x-3">
                 <button
