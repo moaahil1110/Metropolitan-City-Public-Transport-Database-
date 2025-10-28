@@ -368,6 +368,55 @@ These indexes optimize JOIN operations and foreign key lookups.
 
 ---
 
+### Advanced DBMS Features
+
+#### Views (6 Total)
+1. **active_bus_fleet** - Active buses with route information
+2. **user_pass_status** - Pass validity with expiry tracking
+3. **route_statistics** - Route metrics (buses, stops, distance)
+4. **bus_maintenance_summary** - Maintenance costs per bus
+5. **contractor_performance** - Contractor job statistics
+6. **metro_network_overview** - Metro connections with speed calculations
+
+#### Triggers (5 Total)
+1. **update_bus_status_on_maintenance** - Auto-update bus status when maintenance added
+2. **check_pass_expiry** - Auto-expire passes based on date
+3. **validate_bus_capacity** - Ensure capacity is between 10-100
+4. **validate_maintenance_cost** - Prevent negative costs
+5. **prevent_route_deletion** - Block deletion of routes with active buses
+
+#### Stored Procedures (5 Total)
+1. **issue_bus_pass()** - Issue pass with auto-calculated expiry
+2. **schedule_maintenance()** - Schedule maintenance with cost tracking
+3. **get_route_details()** - Fetch complete route information
+4. **calculate_pass_revenue()** - Calculate revenue by date range
+5. **get_maintenance_report()** - Generate maintenance reports
+
+#### Functions (5 Total)
+1. **get_pass_price()** - Calculate pass price by type
+2. **is_pass_valid()** - Check pass validity status
+3. **get_bus_maintenance_cost()** - Total maintenance cost for a bus
+4. **count_active_buses()** - Count active buses on a route
+5. **days_until_expiry()** - Calculate days until pass expires
+
+#### Usage Examples
+```sql
+-- Use a view
+SELECT * FROM active_bus_fleet;
+
+-- Call a stored procedure
+CALL issue_bus_pass(1, 'Monthly', CURDATE());
+
+-- Use a function
+SELECT get_pass_price('Annual');
+
+-- Triggers work automatically on INSERT/UPDATE/DELETE
+```
+
+**Test File:** `SQL-files/test_advanced_features.sql` demonstrates all features
+
+---
+
 ## 🎯 For Presentation
 
 1. **Start both servers** (backend first, then frontend)
