@@ -144,21 +144,227 @@ npm install
 
 ---
 
-## 📊 Database Schema
+## 📊 Database Design & Implementation
 
-### Tables Created
-1. **User** - Passenger information
-2. **Route** - Bus route details
-3. **Bus** - Fleet information
-4. **BusPass** - Pass records
-5. **BusStop** - Stop locations
-6. **RouteBusStop** - Route-Stop relationships
-7. **Contractor** - Service providers
-8. **Maintenance** - Maintenance records
-9. **MetroStop** - Metro stations
-10. **MetroConnection** - Metro connections
+### Database Overview
+- **Database Name:** `metropolitan_transport`
+- **DBMS:** MySQL
+- **Total Tables:** 10 (normalized to 3NF)
+- **Relationships:** 8 foreign key constraints
+- **Indexes:** 8 performance indexes
+- **Sample Data:** Pre-populated with realistic records
 
-All tables have proper foreign keys, indexes, and constraints.
+### Entity-Relationship Model
+
+#### Core Entities
+
+**1. User (Passengers)**
+```sql
+- user_id (PK, AUTO_INCREMENT)
+- name VARCHAR(100)
+- contact_info VARCHAR(100)
+- address VARCHAR(255)
+```
+Stores passenger information for the transport system.
+
+**2. Route (Bus Routes)**
+```sql
+- route_id (PK, AUTO_INCREMENT)
+- route_name VARCHAR(100)
+- start_stop VARCHAR(100)
+- end_stop VARCHAR(100)
+- total_distance DECIMAL(10,2)
+- status VARCHAR(50) DEFAULT 'Active'
+```
+Defines bus routes with start/end points and distance.
+
+**3. Bus (Fleet Management)**
+```sql
+- bus_id (PK, AUTO_INCREMENT)
+- route_id (FK → Route)
+- registration_no VARCHAR(50) UNIQUE
+- type VARCHAR(50)
+- capacity INT
+- status VARCHAR(50) DEFAULT 'Active'
+```
+Manages bus fleet with route assignments.
+
+**4. BusPass (Ticketing)**
+```sql
+- pass_id (PK, AUTO_INCREMENT)
+- user_id (FK → User, CASCADE)
+- pass_type VARCHAR(50)
+- issue_date DATE
+- expiry_date DATE
+- status VARCHAR(50) DEFAULT 'Active'
+```
+Tracks user passes with validity periods.
+
+**5. BusStop (Stop Locations)**
+```sql
+- stop_id (PK, AUTO_INCREMENT)
+- name VARCHAR(100)
+- location VARCHAR(255)
+- facilities VARCHAR(255)
+```
+Stores bus stop information and amenities.
+
+**6. RouteBusStop (Many-to-Many Junction)**
+```sql
+- id (PK, AUTO_INCREMENT)
+- route_id (FK → Route, CASCADE)
+- stop_id (FK → BusStop, CASCADE)
+- UNIQUE(route_id, stop_id)
+```
+Links routes with their stops (M:N relationship).
+
+**7. Contractor (Service Providers)**
+```sql
+- contractor_id (PK, AUTO_INCREMENT)
+- name VARCHAR(100)
+- contact_details VARCHAR(100)
+- service_type VARCHAR(100)
+```
+Manages external service contractors.
+
+**8. Maintenance (Service Records)**
+```sql
+- maintenance_id (PK, AUTO_INCREMENT)
+- contractor_id (FK → Contractor, SET NULL)
+- bus_id (FK → Bus, CASCADE)
+- details VARCHAR(500)
+- maintenance_date DATE
+- cost DECIMAL(10,2)
+- entity_type VARCHAR(50)
+- entity_id INT
+```
+Tracks maintenance activities and costs.
+
+**9. MetroStop (Metro Stations)**
+```sql
+- metro_stop_id (PK, AUTO_INCREMENT)
+- name VARCHAR(100)
+- line VARCHAR(50)
+- location VARCHAR(255)
+- status VARCHAR(50) DEFAULT 'Active'
+```
+Stores metro station information by line.
+
+**10. MetroConnection (Metro Network)**
+```sql
+- connection_id (PK, AUTO_INCREMENT)
+- start_metro_stop_id (FK → MetroStop, CASCADE)
+- end_metro_stop_id (FK → MetroStop, CASCADE)
+- distance DECIMAL(10,2)
+- travel_time INT
+```
+Defines connections between metro stations.
+
+---
+
+### Relationships & Constraints
+
+#### Foreign Key Relationships
+1. **Bus → Route** (Many-to-One)
+   - ON DELETE SET NULL (bus can exist without route)
+
+2. **BusPass → User** (Many-to-One)
+   - ON DELETE CASCADE (pass deleted when user deleted)
+
+3. **RouteBusStop → Route** (Many-to-One)
+   - ON DELETE CASCADE (junction deleted when route deleted)
+
+4. **RouteBusStop → BusStop** (Many-to-One)
+   - ON DELETE CASCADE (junction deleted when stop deleted)
+
+5. **Maintenance → Contractor** (Many-to-One)
+   - ON DELETE SET NULL (maintenance record kept even if contractor removed)
+
+6. **Maintenance → Bus** (Many-to-One)
+   - ON DELETE CASCADE (maintenance deleted when bus deleted)
+
+7. **MetroConnection → MetroStop (start)** (Many-to-One)
+   - ON DELETE CASCADE
+
+8. **MetroConnection → MetroStop (end)** (Many-to-One)
+   - ON DELETE CASCADE
+
+#### Unique Constraints
+- `Bus.registration_no` - Ensures no duplicate bus registrations
+- `RouteBusStop(route_id, stop_id)` - Prevents duplicate route-stop pairs
+
+#### Default Values
+- `status` fields default to 'Active' for operational entities
+
+---
+
+### Database Normalization
+
+**First Normal Form (1NF):** ✅
+- All attributes contain atomic values
+- No repeating groups
+
+**Second Normal Form (2NF):** ✅
+- All non-key attributes fully dependent on primary key
+- No partial dependencies
+
+**Third Normal Form (3NF):** ✅
+- No transitive dependencies
+- Junction table (RouteBusStop) resolves M:N relationship
+
+---
+
+### Indexes for Performance
+
+```sql
+CREATE INDEX idx_bus_route ON Bus(route_id);
+CREATE INDEX idx_buspass_user ON BusPass(user_id);
+CREATE INDEX idx_maintenance_bus ON Maintenance(bus_id);
+CREATE INDEX idx_maintenance_contractor ON Maintenance(contractor_id);
+CREATE INDEX idx_routebusstop_route ON RouteBusStop(route_id);
+CREATE INDEX idx_routebusstop_stop ON RouteBusStop(stop_id);
+CREATE INDEX idx_metroconnection_start ON MetroConnection(start_metro_stop_id);
+CREATE INDEX idx_metroconnection_end ON MetroConnection(end_metro_stop_id);
+```
+
+These indexes optimize JOIN operations and foreign key lookups.
+
+---
+
+### Sample Data Statistics
+
+- **Users:** 5 passengers
+- **Routes:** 5 bus routes
+- **Buses:** 6 vehicles (5 active, 1 in maintenance)
+- **Bus Passes:** 5 passes (Weekly, Monthly, Quarterly, Annual)
+- **Bus Stops:** 10 locations
+- **Route-Stop Mappings:** 10 relationships
+- **Contractors:** 5 service providers
+- **Maintenance Records:** 5 service entries
+- **Metro Stops:** 8 stations across 4 lines
+- **Metro Connections:** 6 inter-station links
+
+---
+
+### Database Operations Demonstrated
+
+#### CRUD Operations
+- **CREATE:** Insert new users, routes, buses, passes
+- **READ:** Query with JOINs, aggregations, filtering
+- **UPDATE:** Modify bus status, pass validity, route details
+- **DELETE:** Remove records with CASCADE effects
+
+#### Complex Queries
+- **Aggregation:** COUNT buses per route, SUM maintenance costs
+- **JOIN:** Multi-table queries (3-4 table joins)
+- **GROUP BY:** Statistics by route, contractor, date
+- **Subqueries:** Nested SELECT for dashboard stats
+- **LEFT JOIN:** Include routes without buses
+
+#### Transaction Support
+- Referential integrity maintained
+- Cascading deletes handled properly
+- NULL handling for optional relationships
 
 ---
 
