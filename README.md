@@ -1,7 +1,7 @@
 # Metropolitan City Public Transport Database
 **DBMS Mini Project - Team 26**
 
-A full-stack web application for managing metropolitan city public transport systems including buses, metro, routes, users, passes, and maintenance.
+A comprehensive database management system for metropolitan city public transport operations. Implements a normalized relational database (3NF) with 10 interconnected tables, demonstrating complex SQL queries, foreign key relationships, and transaction management. Includes a web-based interface for database interaction and visualization.
 
 ---
 
